@@ -1,7 +1,27 @@
 
 var AMOUNT_DIAMONDS = 30;
 var AMOUNT_BOOBLES = 30;
+var NombreJugador = ""
 
+function pedirNombre () {
+    return new Promise((resolve, reject) => {
+        var mensaje;
+        var status= false
+        NombreJugador = prompt("Introduzca su nombre:");
+         
+        if (NombreJugador == null || NombreJugador == "") {
+            mensaje = "Has cancelado o introducido el nombre vacío";
+            alert(mensaje)
+            reject(status)
+        } else {
+            status = true
+            mensaje = "Hola " + NombreJugador;
+            alert(mensaje)
+            resolve(status)
+        }
+        console.log(mensaje);
+    })
+}
 GamePlayManager = {
     init: function() {
         game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
@@ -29,97 +49,111 @@ GamePlayManager = {
         game.load.image('booble2', 'assets/images/booble2.png');
     },
     create: function() {
-        game.add.sprite(0, 0, 'background');
-        
-        this.boobleArray = [];
-        for(var i=0; i<AMOUNT_BOOBLES; i++){
-            var xBooble = game.rnd.integerInRange(1, 1140);
-            var yBooble = game.rnd.integerInRange(600, 950);
+        console.log("HOLA");
+        pedirNombre()
+        .then(() => {
+            game.add.sprite(0, 0, 'background');
             
-            var booble = game.add.sprite(xBooble, yBooble, 'booble' + game.rnd.integerInRange(1,2));
-            booble.vel = 0.2 + game.rnd.frac() * 2;
-            booble.alpha = 0.9;
-            booble.scale.setTo( 0.2 + game.rnd.frac() );
-            this.boobleArray[i] = booble;
-        }
-        
-        this.mollusk = game.add.sprite(500, 150, 'mollusk');
-        this.shark = game.add.sprite(500,20,'shark');
-        this.fishes = game.add.sprite(100, 550, 'fishes');
-       
-        
-        this.horse = game.add.sprite(0,0,'horse');
-        this.horse.frame = 0;
-        this.horse.x = game.width/2;
-        this.horse.y = game.height/2;
-        this.horse.anchor.setTo(0.5);
-        
-        game.input.onDown.add(this.onTap, this);
-        
-        this.diamonds = [];
-        for(var i=0; i<AMOUNT_DIAMONDS; i++){
-            var diamond = game.add.sprite(100,100,'diamonds');
-            diamond.frame = game.rnd.integerInRange(0,3);
-            diamond.scale.setTo( 0.30 + game.rnd.frac());
-            diamond.anchor.setTo(0.5);
-            diamond.x = game.rnd.integerInRange(50, 1050);
-            diamond.y = game.rnd.integerInRange(50, 600);
+            this.boobleArray = [];
+            for(var i=0; i<AMOUNT_BOOBLES; i++){
+                var xBooble = game.rnd.integerInRange(1, 1140);
+                var yBooble = game.rnd.integerInRange(600, 950);
+                
+                var booble = game.add.sprite(xBooble, yBooble, 'booble' + game.rnd.integerInRange(1,2));
+                booble.vel = 0.2 + game.rnd.frac() * 2;
+                booble.alpha = 0.9;
+                booble.scale.setTo( 0.2 + game.rnd.frac() );
+                this.boobleArray[i] = booble;
+            }
             
-            this.diamonds[i] = diamond;
-            var rectCurrenDiamond = this.getBoundsDiamond(diamond);
-            var rectHorse = this.getBoundsDiamond(this.horse);
+            this.mollusk = game.add.sprite(500, 150, 'mollusk');
+            this.shark = game.add.sprite(500,20,'shark');
+            this.fishes = game.add.sprite(100, 550, 'fishes');
+           
             
-            while(this.isOverlapingOtherDiamond(i, rectCurrenDiamond) || this.isRectanglesOverlapping(rectHorse, rectCurrenDiamond) ){
+            this.horse = game.add.sprite(0,0,'horse');
+            this.horse.frame = 0;
+            this.horse.x = game.width/2;
+            this.horse.y = game.height/2;
+            this.horse.anchor.setTo(0.5);
+            
+            game.input.onDown.add(this.onTap, this);
+            
+            this.diamonds = [];
+            for(var i=0; i<AMOUNT_DIAMONDS; i++){
+                var diamond = game.add.sprite(100,100,'diamonds');
+                diamond.frame = game.rnd.integerInRange(0,3);
+                diamond.scale.setTo( 0.30 + game.rnd.frac());
+                diamond.anchor.setTo(0.5);
                 diamond.x = game.rnd.integerInRange(50, 1050);
                 diamond.y = game.rnd.integerInRange(50, 600);
-                rectCurrenDiamond = this.getBoundsDiamond(diamond);
-            }
-        }
-        
-        this.explosionGroup = game.add.group();
-       
-        for(var i=0; i<10; i++){
-            this.explosion = this.explosionGroup.create(100,100,'explosion');
-            this.explosion.tweenScale = game.add.tween(this.explosion.scale).to({
-                            x: [0.4, 0.8, 0.4],
-                            y: [0.4, 0.8, 0.4]
-                }, 600, Phaser.Easing.Exponential.Out, false, 0, 0, false);
-
-            this.explosion.tweenAlpha = game.add.tween(this.explosion).to({
-                            alpha: [1, 0.6, 0]
-                }, 600, Phaser.Easing.Exponential.Out, false, 0, 0, false);
-
-            this.explosion.anchor.setTo(0.5);
-            this.explosion.kill();
-        }
-        
-        this.currentScore = 0;
-        var style = {
-            font: 'bold 30pt Arial',
-            fill: '#FFFFFF',
-            align: 'center'
-          }
-        
-        this.scoreText = game.add.text(game.width/2, 40, '0', style);
-        this.scoreText.anchor.setTo(0.5);
-        
-        this.totalTime = 30;
-        this.timerText = game.add.text(1000, 40, this.totalTime+'', style);
-        this.timerText.anchor.setTo(0.5);
-        
-        this.timerGameOver = game.time.events.loop(Phaser.Timer.SECOND, function(){
-            if(this.flagFirstMouseDown){
-                this.totalTime--;
-                this.timerText.text = this.totalTime+'';
-                if(this.totalTime<=0){
-                    game.time.events.remove(this.timerGameOver);
-                    this.endGame = true;
-                    this.showFinalMessage('Paila. JAJAJA');
+                
+                this.diamonds[i] = diamond;
+                var rectCurrenDiamond = this.getBoundsDiamond(diamond);
+                var rectHorse = this.getBoundsDiamond(this.horse);
+                
+                while(this.isOverlapingOtherDiamond(i, rectCurrenDiamond) || this.isRectanglesOverlapping(rectHorse, rectCurrenDiamond) ){
+                    diamond.x = game.rnd.integerInRange(50, 1050);
+                    diamond.y = game.rnd.integerInRange(50, 600);
+                    rectCurrenDiamond = this.getBoundsDiamond(diamond);
                 }
             }
-        },this);
-        
-        
+            
+            this.explosionGroup = game.add.group();
+           
+            for(var i=0; i<10; i++){
+                this.explosion = this.explosionGroup.create(100,100,'explosion');
+                this.explosion.tweenScale = game.add.tween(this.explosion.scale).to({
+                                x: [0.4, 0.8, 0.4],
+                                y: [0.4, 0.8, 0.4]
+                    }, 600, Phaser.Easing.Exponential.Out, false, 0, 0, false);
+    
+                this.explosion.tweenAlpha = game.add.tween(this.explosion).to({
+                                alpha: [1, 0.6, 0]
+                    }, 600, Phaser.Easing.Exponential.Out, false, 0, 0, false);
+    
+                this.explosion.anchor.setTo(0.5);
+                this.explosion.kill();
+            }
+            
+            this.currentScore = 0;
+            var style = {
+                font: 'bold 30pt Arial',
+                fill: '#FFFFFF',
+                align: 'center'
+              }
+            var styleUser = {
+                font: 'bold 20pt Arial',
+                fill: '#FFFFFF',
+                align: 'center'
+              }
+            
+            this.NombreJugador = game.add.text(game.width/6, 30, "Nombre Jugador: " + NombreJugador, styleUser);
+            this.NombreJugador.anchor.setTo(0.5);
+
+            this.scoreText = game.add.text(game.width/2, 40, '0', style);
+            this.scoreText.anchor.setTo(0.5);
+            
+            this.totalTime = 30;
+            this.timerText = game.add.text(1000, 40, this.totalTime+'', style);
+            this.timerText.anchor.setTo(0.5);
+            
+            this.timerGameOver = game.time.events.loop(Phaser.Timer.SECOND, function(){
+                if(this.flagFirstMouseDown){
+                    this.totalTime--;
+                    this.timerText.text = this.totalTime+'';
+                    if(this.totalTime<=0){
+                        game.time.events.remove(this.timerGameOver);
+                        this.endGame = true;
+                        this.showFinalMessage('Paila. JAJAJA');
+                    }
+                }
+            },this);
+        })
+        .catch(() => {
+            alert("Se recargara la pagina para que intenta nuevamente")
+            location.reload();
+        })
     },
     increaseScore:function(){
         this.countSmile = 0;
@@ -127,12 +161,13 @@ GamePlayManager = {
         
         this.currentScore+=100;
         this.scoreText.text = this.currentScore;
+        this.NombreJugador.text = "Nombre Jugador: " + NombreJugador;
         
         this.amountDiamondsCaught += 1;
         if(this.amountDiamondsCaught >= AMOUNT_DIAMONDS){
             game.time.events.remove(this.timerGameOver);
             this.endGame = true;
-            this.showFinalMessage('Felicidades papuhh');
+            this.showFinalMessage('Felicidades ' + NombreJugador);
         }
     },
     showFinalMessage:function(msg){
